@@ -1,0 +1,1325 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Curesigma - Fast Medical Booking</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQ7CEn5tB8hj8Ck6D0QmMZ8pJtTnv1Q=" crossorigin="">
+  <style>
+    :root {
+      --ink: #10231f;
+      --muted: #65736f;
+      --line: #dfe7e4;
+      --paper: #fbfdfb;
+      --mint: #21c28a;
+      --mint-dark: #0e8d68;
+      --rose: #ff5c77;
+      --amber: #f2a900;
+      --sky: #4ba3ff;
+      --violet: #7d6cff;
+      --white: #ffffff;
+      --shadow: 0 18px 50px rgba(25, 54, 47, .12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(33, 194, 138, .16), transparent 30%),
+        linear-gradient(180deg, #f6fbf8 0%, #eef8f2 42%, #fbfdfb 100%);
+      color: var(--ink);
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 18px 42px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto minmax(210px, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      padding: 12px 0;
+      background: rgba(246, 251, 248, .9);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      box-shadow: 0 12px 28px rgba(16, 35, 31, .2);
+      flex: 0 0 auto;
+    }
+
+    .brand-mark svg { width: 25px; height: 25px; }
+
+    .brand strong {
+      display: block;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .searchbar {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+      height: 48px;
+      padding: 0 15px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(19, 70, 57, .06);
+    }
+
+    .searchbar svg { width: 20px; color: var(--mint-dark); }
+
+    .searchbar input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      color: var(--ink);
+      background: transparent;
+      min-width: 0;
+    }
+
+    .city {
+      border: 1px solid var(--line);
+      background: var(--white);
+      height: 48px;
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--ink);
+      box-shadow: 0 8px 24px rgba(19, 70, 57, .06);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      gap: 18px;
+      min-height: 360px;
+      align-items: stretch;
+      padding-top: 8px;
+    }
+
+    .hero-main {
+      display: grid;
+      align-content: center;
+      gap: 24px;
+      padding: 34px;
+      border-radius: 8px;
+      background: #10231f;
+      color: var(--white);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-main::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(115deg, rgba(16, 35, 31, .98) 0%, rgba(16, 35, 31, .88) 45%, rgba(16, 35, 31, .35) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='620' viewBox='0 0 900 620'%3E%3Crect width='900' height='620' fill='%23dceee6'/%3E%3Cg transform='translate(470 60)'%3E%3Crect x='0' y='90' width='330' height='210' rx='30' fill='%23ffffff'/%3E%3Crect x='42' y='55' width='205' height='70' rx='24' fill='%23ff5c77'/%3E%3Crect x='106' y='72' width='42' height='36' fill='%23ffffff'/%3E%3Crect x='109' y='69' width='36' height='42' fill='%23ffffff' transform='rotate(90 127 90)'/%3E%3Ccircle cx='80' cy='310' r='44' fill='%2310231f'/%3E%3Ccircle cx='250' cy='310' r='44' fill='%2310231f'/%3E%3Ccircle cx='80' cy='310' r='18' fill='%23ffffff'/%3E%3Ccircle cx='250' cy='310' r='18' fill='%23ffffff'/%3E%3Crect x='246' y='150' width='58' height='62' rx='10' fill='%234ba3ff'/%3E%3Cpath d='M0 210H-120c-28 0-50-22-50-50v-4c0-31 25-56 56-56h114z' fill='%23ffffff'/%3E%3Cpath d='M-135 158h74v45h-95c0-25 9-45 21-45z' fill='%234ba3ff'/%3E%3C/g%3E%3Cg transform='translate(595 410)'%3E%3Crect x='0' y='0' width='180' height='118' rx='24' fill='%23ffffff' opacity='.92'/%3E%3Ccircle cx='48' cy='46' r='24' fill='%2321c28a'/%3E%3Crect x='84' y='31' width='62' height='10' rx='5' fill='%2310231f' opacity='.8'/%3E%3Crect x='84' y='54' width='74' height='9' rx='4.5' fill='%2310231f' opacity='.22'/%3E%3Crect x='28' y='86' width='124' height='10' rx='5' fill='%23f2a900'/%3E%3C/g%3E%3Cpath d='M105 496c76-70 161-70 254 0' fill='none' stroke='%2321c28a' stroke-width='20' stroke-linecap='round' opacity='.55'/%3E%3C/svg%3E");
+      background-size: cover;
+      background-position: center;
+    }
+
+    .hero-main > * { position: relative; z-index: 1; }
+
+    .eta {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 8px 11px;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .12);
+      color: #dcfff2;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 560px;
+      font-size: clamp(34px, 5.2vw, 62px);
+      line-height: .98;
+      letter-spacing: 0;
+    }
+
+    .hero-main p {
+      margin: 0;
+      max-width: 500px;
+      color: #d7e9e3;
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .action {
+      border: 0;
+      border-radius: 8px;
+      min-height: 78px;
+      padding: 12px;
+      color: var(--ink);
+      background: var(--white);
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .action:hover, .service:hover, .product:hover, .doctor-card:hover, .ambulance-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 36px rgba(18, 65, 55, .12);
+    }
+
+    .action svg { width: 23px; height: 23px; }
+    .action strong { font-size: 13px; line-height: 1.15; }
+
+    .booking-panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 15px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: #eafaf2;
+      color: var(--mint-dark);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--mint);
+      box-shadow: 0 0 0 5px rgba(33, 194, 138, .14);
+    }
+
+    .tabs, .page-tabs, .filters {
+      display: flex;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f5f8f6;
+      overflow-x: auto;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .tab, .page-tab, .filter {
+      border: 0;
+      border-radius: 6px;
+      min-height: 40px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 0 14px;
+      transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+    }
+
+    .tab.active, .page-tab.active, .filter.active {
+      color: var(--ink);
+      background: var(--white);
+      box-shadow: 0 5px 15px rgba(23, 62, 53, .08);
+    }
+
+    .form {
+      display: none;
+      gap: 11px;
+      align-content: start;
+    }
+
+    .form.active { display: grid; }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .field input, .field select, .field textarea, .section-search {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfb;
+      color: var(--ink);
+      min-height: 44px;
+      padding: 10px 12px;
+      outline: 0;
+    }
+
+    .field textarea {
+      min-height: 86px;
+      resize: vertical;
+    }
+
+    .location-wrap {
+      position: relative;
+    }
+
+    .location-suggestions {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 35;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 18px 42px rgba(16, 35, 31, .16);
+    }
+
+    .location-suggestions.show { display: block; }
+
+    .location-option {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .location-option:hover { background: #f1fff9; }
+
+    .location-option svg {
+      width: 18px;
+      height: 18px;
+      color: var(--mint-dark);
+    }
+
+    .location-option strong, .location-option span { display: block; }
+    .location-option span { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .location-option small { color: var(--mint-dark); font-weight: 900; white-space: nowrap; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .primary {
+      border: 0;
+      border-radius: 8px;
+      min-height: 50px;
+      background: var(--mint);
+      color: #052017;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      box-shadow: 0 14px 28px rgba(33, 194, 138, .28);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .primary:hover { transform: translateY(-1px); box-shadow: 0 18px 34px rgba(33, 194, 138, .32); }
+    .primary svg { width: 18px; height: 18px; }
+
+    .section {
+      padding-top: 22px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 25px;
+      letter-spacing: 0;
+    }
+
+    .section-head span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .service {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 142px;
+      display: grid;
+      align-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .service:hover { border-color: rgba(33, 194, 138, .45); }
+
+    .iconbox {
+      width: 46px;
+      height: 46px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #ecfbf4;
+    }
+
+    .iconbox svg { width: 26px; height: 26px; }
+    .service strong { font-size: 15px; line-height: 1.2; }
+    .service span { color: var(--muted); font-size: 13px; }
+
+    .platform {
+      display: grid;
+      gap: 14px;
+    }
+
+    .page-toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .page {
+      display: none;
+      animation: rise .22s ease both;
+    }
+
+    .page.active { display: block; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .catalog {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .product, .doctor-card, .ambulance-card, .cart, .map-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(24, 65, 55, .06);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+
+    .product {
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .product-art {
+      aspect-ratio: 1.25 / .86;
+      border-radius: 8px;
+      background: #eef8f2;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .product-art img, .doctor-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .product strong {
+      min-height: 38px;
+      line-height: 1.22;
+      font-size: 14px;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      width: fit-content;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: #eafaf2;
+      color: var(--mint-dark);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .add, .book {
+      border: 1px solid var(--mint);
+      color: var(--mint-dark);
+      background: #f1fff9;
+      min-width: 72px;
+      height: 34px;
+      border-radius: 7px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: background .18s ease, color .18s ease;
+    }
+
+    .add:hover, .book:hover {
+      background: var(--mint);
+      color: #052017;
+    }
+
+    .cart {
+      position: sticky;
+      top: 86px;
+      display: grid;
+      gap: 12px;
+      padding: 15px;
+      background: #10231f;
+      color: var(--white);
+      border-color: #10231f;
+    }
+
+    .cart h3 { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .cart-count { color: var(--mint); }
+    .cart-line { display: flex; align-items: center; justify-content: space-between; color: #d6e6e1; gap: 12px; }
+    .cart-empty { color: #b8cbc5; }
+    .cart small { color: #b8cbc5; }
+
+    .doctor-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .doctor-card {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .doctor-photo {
+      width: 74px;
+      height: 74px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #eafaf2;
+    }
+
+    .doctor-info {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .doctor-info h3, .ambulance-card h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .doctor-stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .ambulance-layout {
+      display: grid;
+      grid-template-columns: 1fr 390px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .ambulance-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .ambulance-card {
+      padding: 15px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .ambulance-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #fff0f3;
+    }
+
+    .ambulance-icon svg { width: 34px; height: 34px; }
+
+    .ambulance-data {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .map-card {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      position: sticky;
+      top: 86px;
+    }
+
+    #map {
+      width: 100%;
+      height: 360px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #eef8f2;
+    }
+
+    .map-note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(80px);
+      opacity: 0;
+      z-index: 80;
+      background: var(--ink);
+      color: var(--white);
+      border-radius: 8px;
+      padding: 13px 16px;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, .22);
+      transition: .24s ease;
+      max-width: min(92vw, 520px);
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 1120px) {
+      .catalog { grid-template-columns: repeat(4, 1fr); }
+      .doctor-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 980px) {
+      .topbar { grid-template-columns: 1fr; }
+      .hero, .content-grid, .ambulance-layout { grid-template-columns: 1fr; }
+      .service-grid { grid-template-columns: repeat(3, 1fr); }
+      .cart, .map-card { position: static; }
+    }
+
+    @media (max-width: 760px) {
+      .catalog { grid-template-columns: repeat(3, 1fr); }
+      .page-toolbar { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .app { padding: 10px 10px 28px; }
+      .hero-main { padding: 24px 18px; min-height: 420px; }
+      .quick-actions, .service-grid, .catalog { grid-template-columns: repeat(2, 1fr); }
+      .row, .doctor-grid { grid-template-columns: 1fr; }
+      .booking-panel { padding: 14px; }
+      .section-head { align-items: start; flex-direction: column; }
+      .ambulance-card { grid-template-columns: auto 1fr; }
+      .ambulance-card .book { grid-column: 1 / -1; width: 100%; }
+      #map { height: 300px; }
+    }
+
+    @media (max-width: 430px) {
+      .quick-actions, .service-grid, .catalog { grid-template-columns: 1fr; }
+      h1 { font-size: 33px; }
+      .tabs { grid-template-columns: 1fr; }
+      .doctor-card { grid-template-columns: 62px 1fr; }
+      .doctor-photo { width: 62px; height: 62px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7V3z" fill="#21c28a"/>
+          </svg>
+        </div>
+        <div>
+          <strong>Curesigma</strong>
+          <span>Rapid medical care</span>
+        </div>
+      </div>
+      <label class="searchbar">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m21 21-4.3-4.3M10.7 18a7.3 7.3 0 1 1 0-14.6 7.3 7.3 0 0 1 0 14.6z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search" placeholder="Search medicine, doctor, ambulance, location">
+      </label>
+      <select class="city" aria-label="Select city">
+        <option>Delhi NCR</option>
+        <option>Mumbai</option>
+        <option>Bengaluru</option>
+        <option>Jaipur</option>
+      </select>
+    </header>
+
+    <section class="hero">
+      <div class="hero-main">
+        <div class="eta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 7v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          10 min medical response
+        </div>
+        <div>
+          <h1>Ambulance, doctor, medicine - sab ek jagah.</h1>
+          <p>Book urgent medical help, verified doctors, lab tests and medicine delivery from one fast Curesigma dashboard.</p>
+        </div>
+        <div class="quick-actions" aria-label="Quick actions">
+          <button class="action" data-switch="ambulance">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 15V8h10l3 3h3v4M6 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM8 8v5m-2-2h4" stroke="#ff5c77" stroke-width="2" stroke-linecap="round"/></svg>
+            <strong>Ambulance</strong>
+          </button>
+          <button class="action" data-switch="doctor">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm-8 8a8 8 0 0 1 16 0M12 6v4m-2-2h4" stroke="#21c28a" stroke-width="2" stroke-linecap="round"/></svg>
+            <strong>Doctor</strong>
+          </button>
+          <button class="action" data-switch="medicine">
+            <svg viewBox="0 0 24 24" fill="none"><path d="m10 21 11-11a5 5 0 0 0-7-7L3 14a5 5 0 0 0 7 7Zm-2-9 4 4" stroke="#4ba3ff" stroke-width="2" stroke-linecap="round"/></svg>
+            <strong>Medicine</strong>
+          </button>
+          <button class="action" id="teamJump">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M16 11a4 4 0 1 0-8 0v6h8v-6Zm-10 6h12M9 7V4m6 3V4" stroke="#f2a900" stroke-width="2" stroke-linecap="round"/></svg>
+            <strong>Care Team</strong>
+          </button>
+        </div>
+      </div>
+
+      <aside class="booking-panel" aria-label="Booking panel">
+        <div class="panel-title">
+          <h2>Book now</h2>
+          <div class="live-pill"><span class="live-dot"></span> Live</div>
+        </div>
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-formtab="ambulance" role="tab">Ambulance</button>
+          <button class="tab" data-formtab="doctor" role="tab">Doctor</button>
+          <button class="tab" data-formtab="medicine" role="tab">Medicine</button>
+        </div>
+
+        <form class="form active" id="ambulance" data-name="Ambulance">
+          <div class="field location-wrap">
+            <label for="pickup">Pickup location</label>
+            <input id="pickup" required autocomplete="off" placeholder="Type area, hospital, road">
+            <div class="location-suggestions" id="pickupSuggestions"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label for="case">Emergency type</label><select id="case"><option>Accident / Trauma</option><option>Cardiac</option><option>Pregnancy</option><option>General emergency</option></select></div>
+            <div class="field"><label for="ambulanceType">Vehicle</label><select id="ambulanceType"><option>ALS Ambulance</option><option>BLS Ambulance</option><option>ICU Ambulance</option><option>Neonatal Ambulance</option></select></div>
+          </div>
+          <button class="primary" type="submit">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Request ambulance
+          </button>
+        </form>
+
+        <form class="form" id="doctor" data-name="Doctor booking">
+          <div class="field"><label for="speciality">Speciality</label><select id="speciality"><option>General Physician</option><option>Cardiologist</option><option>Pediatrician</option><option>Gynecologist</option><option>Dermatologist</option><option>Orthopedic</option></select></div>
+          <div class="row">
+            <div class="field"><label for="mode">Mode</label><select id="mode"><option>Video consult</option><option>Clinic visit</option><option>Home visit</option></select></div>
+            <div class="field"><label for="time">Time</label><select id="time"><option>Now</option><option>Today evening</option><option>Tomorrow</option></select></div>
+          </div>
+          <button class="primary" type="submit">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M8 12h8M12 8v8M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Book doctor
+          </button>
+        </form>
+
+        <form class="form" id="medicine" data-name="Medicine order">
+          <div class="field"><label for="rx">Medicine or prescription</label><textarea id="rx" placeholder="Type medicine names or upload prescription later"></textarea></div>
+          <div class="row">
+            <div class="field"><label for="delivery">Delivery</label><select id="delivery"><option>Express 20 min</option><option>Today</option><option>Monthly refill</option></select></div>
+            <div class="field"><label for="payment">Payment</label><select id="payment"><option>UPI</option><option>Cash</option><option>Insurance</option></select></div>
+          </div>
+          <button class="primary" type="submit">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 6h15l-2 8H8L6 3H3m6 18a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm9 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Start order
+          </button>
+        </form>
+      </aside>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>Fast medical services</h2>
+          <span>Choose what you need right now</span>
+        </div>
+      </div>
+      <div class="service-grid">
+        <div class="service" data-switch="ambulance"><div class="iconbox"><svg viewBox="0 0 24 24" fill="none"><path d="M4 15V8h10l3 3h3v4M6 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke="#ff5c77" stroke-width="2" stroke-linecap="round"/></svg></div><strong>Ambulance booking</strong><span>ALS, BLS, ICU, Air</span></div>
+        <div class="service" data-switch="doctor"><div class="iconbox"><svg viewBox="0 0 24 24" fill="none"><path d="M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm-8 8a8 8 0 0 1 16 0" stroke="#21c28a" stroke-width="2" stroke-linecap="round"/></svg></div><strong>Doctor booking</strong><span>Video, clinic, home</span></div>
+        <div class="service" data-switch="medicine"><div class="iconbox"><svg viewBox="0 0 24 24" fill="none"><path d="m10 21 11-11a5 5 0 0 0-7-7L3 14a5 5 0 0 0 7 7Z" stroke="#4ba3ff" stroke-width="2" stroke-linecap="round"/></svg></div><strong>Medicine delivery</strong><span>50 quick products</span></div>
+        <div class="service" data-switch="medicine"><div class="iconbox"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h10v18H7V3Zm3 5h4m-4 4h4m-4 4h2" stroke="#7d6cff" stroke-width="2" stroke-linecap="round"/></svg></div><strong>Lab & wellness</strong><span>Health essentials</span></div>
+        <div class="service" id="careService"><div class="iconbox"><svg viewBox="0 0 24 24" fill="none"><path d="M16 11a4 4 0 1 0-8 0v6h8v-6Zm-10 6h12" stroke="#f2a900" stroke-width="2" stroke-linecap="round"/></svg></div><strong>Medical team</strong><span>Nurse, physio, attendant</span></div>
+      </div>
+    </section>
+
+    <section class="section platform" id="platform">
+      <div class="section-head">
+        <div>
+          <h2>Curesigma care platform</h2>
+          <span>Practo-style doctors, Apollo-style pharmacy, Blinkit-style checkout</span>
+        </div>
+      </div>
+      <div class="page-tabs" role="tablist" aria-label="Curesigma pages">
+        <button class="page-tab active" data-page="medicinePage">Medicine</button>
+        <button class="page-tab" data-page="doctorPage">Doctor</button>
+        <button class="page-tab" data-page="ambulancePage">Ambulance</button>
+      </div>
+
+      <section class="page active" id="medicinePage">
+        <div class="page-toolbar">
+          <input class="section-search" id="medicineSearch" placeholder="Search 50 medicines and wellness items">
+          <div class="filters" id="medicineFilters"></div>
+        </div>
+        <div class="section content-grid">
+          <div class="catalog" id="medicineGrid"></div>
+          <aside class="cart" id="cartPanel">
+            <h3>Cart <span class="cart-count" id="cartCount">0</span></h3>
+            <div id="cartBody" class="cart-empty">No medicines added yet</div>
+            <small>Prescription medicines will be verified before delivery.</small>
+            <button class="primary" id="checkout" type="button">Checkout</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="page" id="doctorPage">
+        <div class="page-toolbar">
+          <input class="section-search" id="doctorSearch" placeholder="Search doctor name or specialty">
+          <div class="filters" id="doctorFilters"></div>
+        </div>
+        <div class="section doctor-grid" id="doctorGrid"></div>
+      </section>
+
+      <section class="page" id="ambulancePage">
+        <div class="ambulance-layout section">
+          <div class="ambulance-list" id="ambulanceGrid"></div>
+          <aside class="map-card">
+            <div class="field location-wrap">
+              <label for="mapLocation">Pickup location search</label>
+              <input id="mapLocation" autocomplete="off" placeholder="Search with OpenStreetMap">
+              <div class="location-suggestions" id="mapSuggestions"></div>
+            </div>
+            <div id="map" aria-label="Interactive pickup map"></div>
+            <div class="map-note" id="mapStatus">Type a pickup location. Selecting a result updates the pickup marker.</div>
+          </aside>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const state = {
+      cart: [],
+      medicineCategory: "All",
+      doctorSpecialty: "All",
+      pickup: { lat: 28.6139, lon: 77.2090, label: "New Delhi, Delhi" },
+      map: null,
+      pickupMarker: null,
+      ambulanceMarker: null
+    };
+
+    const medicineCategories = ["All", "Pain Relief", "Fever", "Diabetes", "Heart", "Digestive", "Skin", "Vitamins", "Baby Care", "Devices"];
+    const medicineNames = [
+      ["Dolo 650", "Fever", 32], ["Crocin Advance", "Fever", 28], ["Calpol 500", "Fever", 30], ["Combiflam", "Pain Relief", 42], ["Volini Spray", "Pain Relief", 145],
+      ["Moov Gel", "Pain Relief", 118], ["Shelcal 500", "Vitamins", 132], ["Vitamin D3 Sachet", "Vitamins", 85], ["Becosules Capsule", "Vitamins", 48], ["Revital H", "Vitamins", 315],
+      ["Digene Gel", "Digestive", 96], ["Eno Lemon", "Digestive", 12], ["Pantocid DSR", "Digestive", 154], ["Loperamide", "Digestive", 38], ["ORS Sachet", "Digestive", 22],
+      ["Cetirizine", "Skin", 18], ["Candid Cream", "Skin", 128], ["Betadine Ointment", "Skin", 110], ["Soframycin", "Skin", 72], ["Aloe Vera Gel", "Skin", 165],
+      ["Gluconorm G1", "Diabetes", 128], ["Metformin 500", "Diabetes", 44], ["Accu-Chek Strips", "Diabetes", 760], ["Sugar Free Gold", "Diabetes", 155], ["Glucometer Kit", "Devices", 899],
+      ["Telma 40", "Heart", 156], ["Amlong 5", "Heart", 64], ["Ecosprin AV", "Heart", 118], ["Rosuvas 10", "Heart", 178], ["BP Monitor", "Devices", 1499],
+      ["Himalaya Baby Lotion", "Baby Care", 185], ["Johnson Baby Oil", "Baby Care", 165], ["Baby Wipes", "Baby Care", 99], ["Zincovit Drops", "Baby Care", 84], ["Nebulizer Kit", "Devices", 1299],
+      ["Digital Thermometer", "Devices", 249], ["Pulse Oximeter", "Devices", 699], ["N95 Mask Pack", "Devices", 149], ["Hand Sanitizer", "Devices", 90], ["First Aid Box", "Devices", 399],
+      ["Azithromycin", "Fever", 112], ["Cough Syrup", "Fever", 88], ["Sinarest", "Fever", 66], ["Ibuprofen", "Pain Relief", 36], ["Pain Relief Patch", "Pain Relief", 119],
+      ["Multivitamin Gummies", "Vitamins", 265], ["Probiotic Capsules", "Digestive", 245], ["Antacid Tablets", "Digestive", 58], ["Sunscreen SPF 50", "Skin", 349], ["Insulin Pen Needles", "Diabetes", 420]
+    ];
+
+    const medicines = medicineNames.map((item, index) => ({
+      id: index + 1,
+      name: item[0],
+      category: item[1],
+      price: item[2],
+      rating: (4.1 + ((index % 9) / 10)).toFixed(1),
+      image: makeMedicineImage(item[0], item[1], index)
+    }));
+
+    const doctors = [
+      ["Dr. Aditi Sharma", "General Physician", "12 yrs", 499, "4.8"], ["Dr. Rohan Mehta", "Cardiologist", "15 yrs", 899, "4.9"],
+      ["Dr. Neha Kapoor", "Pediatrician", "10 yrs", 599, "4.7"], ["Dr. Sameer Khan", "Dermatologist", "9 yrs", 649, "4.6"],
+      ["Dr. Priya Nair", "Gynecologist", "14 yrs", 799, "4.9"], ["Dr. Arjun Bansal", "Orthopedic", "13 yrs", 749, "4.7"],
+      ["Dr. Meera Iyer", "ENT Specialist", "11 yrs", 549, "4.6"], ["Dr. Kabir Sethi", "Neurologist", "16 yrs", 1099, "4.8"],
+      ["Dr. Sana Qureshi", "Dentist", "8 yrs", 399, "4.5"], ["Dr. Vikram Rao", "Pulmonologist", "12 yrs", 699, "4.7"],
+      ["Dr. Ishita Sen", "Psychiatrist", "10 yrs", 899, "4.8"], ["Dr. Manav Gupta", "Urologist", "11 yrs", 799, "4.6"]
+    ].map((item, index) => ({
+      id: index + 1,
+      name: item[0],
+      specialty: item[1],
+      experience: item[2],
+      fee: item[3],
+      rating: item[4],
+      photo: makeDoctorImage(item[0], index)
+    }));
+
+    const ambulances = [
+      { name: "ALS Ambulance", eta: "8 min", price: 1499, desc: "Advanced life support with paramedic" },
+      { name: "BLS Ambulance", eta: "10 min", price: 999, desc: "Basic life support for stable patients" },
+      { name: "ICU Ambulance", eta: "14 min", price: 2499, desc: "Ventilator and critical care support" },
+      { name: "Neonatal Ambulance", eta: "18 min", price: 2999, desc: "Newborn incubator and specialist care" },
+      { name: "Air Ambulance", eta: "45 min", price: 49999, desc: "Long-distance emergency transfer" }
+    ];
+
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => document.querySelectorAll(selector);
+
+    function makeMedicineImage(name, category, index) {
+      const colors = ["#21c28a", "#4ba3ff", "#ff5c77", "#f2a900", "#7d6cff"];
+      const color = colors[index % colors.length];
+      const label = encodeURIComponent(name.split(" ").slice(0, 2).join(" "));
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="220" viewBox="0 0 320 220">
+        <rect width="320" height="220" fill="#eef8f2"/>
+        <rect x="58" y="50" width="204" height="122" rx="24" fill="#fff"/>
+        <rect x="82" y="77" width="92" height="22" rx="11" fill="${color}"/>
+        <rect x="82" y="112" width="142" height="13" rx="6.5" fill="#dfe7e4"/>
+        <rect x="82" y="138" width="96" height="13" rx="6.5" fill="#dfe7e4"/>
+        <circle cx="232" cy="86" r="22" fill="${color}" opacity=".18"/>
+        <text x="160" y="196" text-anchor="middle" font-family="Arial" font-size="18" font-weight="700" fill="#10231f">${label}</text>
+      </svg>`;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+
+    function makeDoctorImage(name, index) {
+      const colors = ["#21c28a", "#4ba3ff", "#7d6cff", "#ff5c77", "#f2a900"];
+      const initials = name.replace("Dr. ", "").split(" ").map(part => part[0]).join("").slice(0, 2);
+      const color = colors[index % colors.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+        <rect width="160" height="160" fill="#eafaf2"/>
+        <circle cx="80" cy="58" r="34" fill="${color}"/>
+        <path d="M32 152c8-38 31-58 48-58s40 20 48 58" fill="#ffffff"/>
+        <circle cx="68" cy="55" r="4" fill="#10231f"/>
+        <circle cx="92" cy="55" r="4" fill="#10231f"/>
+        <path d="M70 72c8 6 14 6 22 0" fill="none" stroke="#10231f" stroke-width="4" stroke-linecap="round"/>
+        <text x="80" y="133" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#10231f">${initials}</text>
+      </svg>`;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+
+    function showToast(message) {
+      const toast = $("#toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function switchForm(name) {
+      $$("[data-formtab]").forEach(tab => tab.classList.toggle("active", tab.dataset.formtab === name));
+      $$(".form").forEach(form => form.classList.toggle("active", form.id === name));
+    }
+
+    function switchPage(name) {
+      const pageName = name.endsWith("Page") ? name : `${name}Page`;
+      $$(".page-tab").forEach(tab => tab.classList.toggle("active", tab.dataset.page === pageName));
+      $$(".page").forEach(page => page.classList.toggle("active", page.id === pageName));
+      switchForm(pageName.replace("Page", ""));
+      $("#platform").scrollIntoView({ behavior: "smooth", block: "start" });
+      if (pageName === "ambulancePage") setTimeout(initMap, 80);
+    }
+
+    function renderFilters() {
+      $("#medicineFilters").innerHTML = medicineCategories.map(category => `<button class="filter ${category === state.medicineCategory ? "active" : ""}" data-medicine-category="${category}">${category}</button>`).join("");
+      const specialties = ["All", ...new Set(doctors.map(doctor => doctor.specialty))];
+      $("#doctorFilters").innerHTML = specialties.map(specialty => `<button class="filter ${specialty === state.doctorSpecialty ? "active" : ""}" data-doctor-specialty="${specialty}">${specialty}</button>`).join("");
+    }
+
+    function renderMedicines() {
+      const query = $("#medicineSearch").value.trim().toLowerCase();
+      const filtered = medicines.filter(item => {
+        const categoryMatch = state.medicineCategory === "All" || item.category === state.medicineCategory;
+        const queryMatch = !query || `${item.name} ${item.category}`.toLowerCase().includes(query);
+        return categoryMatch && queryMatch;
+      });
+      $("#medicineGrid").innerHTML = filtered.map(item => `
+        <article class="product">
+          <div class="product-art"><img src="${item.image}" alt="${item.name}"></div>
+          <strong>${item.name}</strong>
+          <div class="meta">${item.category}</div>
+          <div class="rating">Star ${item.rating}</div>
+          <div class="price-row"><b>Rs ${item.price}</b><button class="add" data-add="${item.id}">ADD</button></div>
+        </article>
+      `).join("");
+    }
+
+    function renderDoctors() {
+      const query = $("#doctorSearch").value.trim().toLowerCase();
+      const filtered = doctors.filter(doctor => {
+        const specialtyMatch = state.doctorSpecialty === "All" || doctor.specialty === state.doctorSpecialty;
+        const queryMatch = !query || `${doctor.name} ${doctor.specialty}`.toLowerCase().includes(query);
+        return specialtyMatch && queryMatch;
+      });
+      $("#doctorGrid").innerHTML = filtered.map(doctor => `
+        <article class="doctor-card">
+          <div class="doctor-photo"><img src="${doctor.photo}" alt="${doctor.name}"></div>
+          <div class="doctor-info">
+            <h3>${doctor.name}</h3>
+            <div class="meta">${doctor.specialty}</div>
+            <div class="doctor-stats"><span>Star ${doctor.rating}</span><span>${doctor.experience}</span><span>Rs ${doctor.fee}</span></div>
+            <button class="book" data-doctor="${doctor.name}">Book</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderAmbulances() {
+      $("#ambulanceGrid").innerHTML = ambulances.map((item, index) => `
+        <article class="ambulance-card">
+          <div class="ambulance-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 15V8h10l3 3h3v4M6 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM8 8v5m-2-2h4" stroke="#ff5c77" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <h3>${item.name}</h3>
+            <div class="meta">${item.desc}</div>
+            <div class="ambulance-data"><span>ETA ${item.eta}</span><span>Rs ${item.price}</span></div>
+          </div>
+          <button class="book" data-ambulance="${index}">Book</button>
+        </article>
+      `).join("");
+    }
+
+    function addToCart(id) {
+      const item = medicines.find(medicine => medicine.id === Number(id));
+      const existing = state.cart.find(cartItem => cartItem.id === item.id);
+      if (existing) existing.qty += 1;
+      else state.cart.push({ ...item, qty: 1 });
+      renderCart();
+      showToast(`${item.name} added to cart`);
+    }
+
+    function renderCart() {
+      const count = state.cart.reduce((sum, item) => sum + item.qty, 0);
+      $("#cartCount").textContent = count;
+      if (!state.cart.length) {
+        $("#cartBody").className = "cart-empty";
+        $("#cartBody").textContent = "No medicines added yet";
+        return;
+      }
+      const total = state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+      $("#cartBody").className = "";
+      $("#cartBody").innerHTML = state.cart.map(item => `<div class="cart-line"><span>${item.name} x ${item.qty}</span><b>Rs ${item.price * item.qty}</b></div>`).join("") +
+        `<div class="cart-line"><span>Total</span><b>Rs ${total}</b></div>`;
+    }
+
+    function debounce(fn, delay = 420) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    async function fetchLocations(query, target) {
+      const box = target === "pickup" ? $("#pickupSuggestions") : $("#mapSuggestions");
+      if (query.trim().length < 3) {
+        box.classList.remove("show");
+        box.innerHTML = "";
+        return;
+      }
+      box.innerHTML = `<button class="location-option" type="button"><span></span><div><strong>Searching locations...</strong><span>OpenStreetMap Nominatim</span></div><small>Live</small></button>`;
+      box.classList.add("show");
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=in&q=${encodeURIComponent(query)}`;
+        const response = await fetch(url, { headers: { "Accept-Language": "en-IN,en" } });
+        const results = await response.json();
+        renderLocationSuggestions(results, target);
+      } catch (error) {
+        box.innerHTML = `<button class="location-option" type="button"><span></span><div><strong>Location search unavailable</strong><span>Check internet and try again</span></div><small>Map</small></button>`;
+      }
+    }
+
+    function renderLocationSuggestions(results, target) {
+      const box = target === "pickup" ? $("#pickupSuggestions") : $("#mapSuggestions");
+      if (!results.length) {
+        box.innerHTML = `<button class="location-option" type="button"><span></span><div><strong>No exact result found</strong><span>Try a nearby landmark or hospital</span></div><small>0</small></button>`;
+        box.classList.add("show");
+        return;
+      }
+      box.innerHTML = results.map(result => {
+        const title = result.name || result.display_name.split(",")[0];
+        const subtitle = result.display_name.split(",").slice(1, 4).join(",").trim();
+        return `<button class="location-option" type="button" data-target="${target}" data-lat="${result.lat}" data-lon="${result.lon}" data-label="${escapeHtml(result.display_name)}">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.4 7-12a7 7 0 1 0-14 0c0 6.6 7 12 7 12Zm0-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2"/></svg>
+          <div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div><small>Select</small>
+        </button>`;
+      }).join("");
+      box.classList.add("show");
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
+    }
+
+    function selectLocation(button) {
+      const lat = Number(button.dataset.lat);
+      const lon = Number(button.dataset.lon);
+      const label = button.dataset.label;
+      state.pickup = { lat, lon, label };
+      $("#pickup").value = label;
+      $("#mapLocation").value = label;
+      $("#pickupSuggestions").classList.remove("show");
+      $("#mapSuggestions").classList.remove("show");
+      updateMap(lat, lon, label);
+      showToast("Pickup location detected and map updated");
+    }
+
+    function initMap() {
+      if (!window.L || state.map) {
+        if (state.map) setTimeout(() => state.map.invalidateSize(), 60);
+        return;
+      }
+      state.map = L.map("map").setView([state.pickup.lat, state.pickup.lon], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(state.map);
+      state.pickupMarker = L.marker([state.pickup.lat, state.pickup.lon]).addTo(state.map).bindPopup("Pickup: " + state.pickup.label);
+      setTimeout(() => state.map.invalidateSize(), 80);
+    }
+
+    function updateMap(lat, lon, label) {
+      initMap();
+      if (!state.map) {
+        $("#mapStatus").textContent = `Pickup selected: ${label}`;
+        return;
+      }
+      state.pickupMarker.setLatLng([lat, lon]).bindPopup("Pickup: " + label).openPopup();
+      state.map.setView([lat, lon], 14);
+      $("#mapStatus").textContent = `Pickup selected: ${label}`;
+    }
+
+    function bookAmbulance(index) {
+      const item = ambulances[index];
+      switchPage("ambulance");
+      updateMap(state.pickup.lat, state.pickup.lon, state.pickup.label);
+      if (state.map) {
+        const ambLat = state.pickup.lat + 0.012;
+        const ambLon = state.pickup.lon + 0.012;
+        if (state.ambulanceMarker) state.map.removeLayer(state.ambulanceMarker);
+        state.ambulanceMarker = L.marker([ambLat, ambLon]).addTo(state.map).bindPopup(`${item.name} on the way - ETA ${item.eta}`).openPopup();
+      }
+      showToast(`${item.name} booked. ETA ${item.eta}.`);
+    }
+
+    function bindEvents() {
+      $$("[data-formtab]").forEach(button => button.addEventListener("click", () => switchForm(button.dataset.formtab)));
+      $$("[data-switch]").forEach(button => button.addEventListener("click", () => switchPage(button.dataset.switch)));
+      $$(".page-tab").forEach(button => button.addEventListener("click", () => switchPage(button.dataset.page)));
+
+      $("#teamJump").addEventListener("click", () => switchPage("doctor"));
+      $("#careService").addEventListener("click", () => switchPage("doctor"));
+
+      $$(".form").forEach(form => {
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          if (form.id === "ambulance") bookAmbulance(Math.max(0, ambulances.findIndex(item => item.name === $("#ambulanceType").value)));
+          else showToast(`${form.dataset.name} request received. Curesigma team will call shortly.`);
+        });
+      });
+
+      $("#medicineSearch").addEventListener("input", renderMedicines);
+      $("#doctorSearch").addEventListener("input", renderDoctors);
+
+      $("#medicineFilters").addEventListener("click", event => {
+        const button = event.target.closest("[data-medicine-category]");
+        if (!button) return;
+        state.medicineCategory = button.dataset.medicineCategory;
+        renderFilters();
+        renderMedicines();
+      });
+
+      $("#doctorFilters").addEventListener("click", event => {
+        const button = event.target.closest("[data-doctor-specialty]");
+        if (!button) return;
+        state.doctorSpecialty = button.dataset.doctorSpecialty;
+        renderFilters();
+        renderDoctors();
+      });
+
+      $("#medicineGrid").addEventListener("click", event => {
+        const button = event.target.closest("[data-add]");
+        if (button) addToCart(button.dataset.add);
+      });
+
+      $("#doctorGrid").addEventListener("click", event => {
+        const button = event.target.closest("[data-doctor]");
+        if (button) showToast(`${button.dataset.doctor} booked. Confirmation will be sent shortly.`);
+      });
+
+      $("#ambulanceGrid").addEventListener("click", event => {
+        const button = event.target.closest("[data-ambulance]");
+        if (button) bookAmbulance(Number(button.dataset.ambulance));
+      });
+
+      $("#checkout").addEventListener("click", () => {
+        showToast(state.cart.length ? "Order placed for pharmacist review." : "Add a medicine first.");
+      });
+
+      const pickupSearch = debounce(event => fetchLocations(event.target.value, "pickup"));
+      const mapSearch = debounce(event => fetchLocations(event.target.value, "map"));
+      $("#pickup").addEventListener("input", pickupSearch);
+      $("#mapLocation").addEventListener("input", mapSearch);
+
+      document.addEventListener("click", event => {
+        const locationButton = event.target.closest(".location-option[data-lat]");
+        if (locationButton) selectLocation(locationButton);
+        if (!event.target.closest(".location-wrap")) {
+          $("#pickupSuggestions").classList.remove("show");
+          $("#mapSuggestions").classList.remove("show");
+        }
+      });
+
+      $("#search").addEventListener("input", event => {
+        const query = event.target.value.trim().toLowerCase();
+        if (!query) return;
+        if (query.includes("ambulance") || query.includes("emergency")) switchPage("ambulance");
+        if (query.includes("doctor") || query.includes("clinic") || query.includes("consult")) switchPage("doctor");
+        if (query.includes("medicine") || query.includes("tablet") || query.includes("med") || query.includes("pharmacy")) switchPage("medicine");
+      });
+    }
+
+    renderFilters();
+    renderMedicines();
+    renderDoctors();
+    renderAmbulances();
+    renderCart();
+    bindEvents();
+  </script>
+</body>
+</html>
